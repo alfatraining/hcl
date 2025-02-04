@@ -105,6 +105,23 @@ func TestTokensForValue(t *testing.T) {
 			},
 		},
 		{
+			RawStringVal(`^\d+\.\d+\.\d+$`),
+			Tokens{
+				{
+					Type:  hclsyntax.TokenOQuote,
+					Bytes: []byte(`"`),
+				},
+				{
+					Type:  hclsyntax.TokenQuotedLit,
+					Bytes: []byte(`^\d+\.\d+\.\d+$`),
+				},
+				{
+					Type:  hclsyntax.TokenCQuote,
+					Bytes: []byte(`"`),
+				},
+			},
+		},
+		{
 			cty.StringVal(`"foo"`),
 			Tokens{
 				{

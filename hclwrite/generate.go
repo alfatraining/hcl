@@ -5,6 +5,7 @@ package hclwrite
 
 import (
 	"fmt"
+	"reflect"
 	"unicode"
 	"unicode/utf8"
 
@@ -182,6 +183,23 @@ func TokensForFunctionCall(funcName string, args ...Tokens) Tokens {
 	return toks
 }
 
+func RawStringVal(s string) cty.Value {
+	return rawTokensCapsule(Tokens{
+		&Token{
+			Type:  hclsyntax.TokenOQuote,
+			Bytes: []byte{'"'},
+		},
+		&Token{
+			Type:  hclsyntax.TokenQuotedLit,
+			Bytes: []byte(s),
+		},
+		&Token{
+			Type:  hclsyntax.TokenCQuote,
+			Bytes: []byte{'"'},
+		},
+	})
+}
+
 func appendTokensForValue(val cty.Value, toks Tokens) Tokens {
 	switch {
 
@@ -296,6 +314,15 @@ func appendTokensForValue(val cty.Value, toks Tokens) Tokens {
 			Type:  hclsyntax.TokenCBrace,
 			Bytes: []byte{'}'},
 		})
+
+	case val.Type().IsCapsuleType() && val.Type().EncapsulatedType() == reflect.TypeOf(Tokens{}):
+		data := val.Type().CapsuleExtensionData(rawTokensKey)
+		if data != nil {
+			if rawTokens, ok := data.(Tokens); ok {
+				toks = append(toks, rawTokens...)
+				return toks
+			}
+		}
 
 	default:
 		panic(fmt.Sprintf("cannot produce tokens for %#v", val))
